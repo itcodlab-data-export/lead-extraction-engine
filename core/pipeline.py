@@ -1,5 +1,6 @@
 """Company signal -> list of finished leads."""
-import datetime
+import time, threading
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from core import auditor, stakeholders, verifier, dedup, qc, models, logger
 log = logger.get()
 
@@ -10,19 +11,23 @@ def build_leads(signals, dd):
         if k not in seen:
             seen.add(k); companies.append(s)
     out, stats = [], {"companies": len(companies), "audited": 0, "people": 0, "rejected": 0}
-    for s in companies:
-        try:
-            out += _one(s, dd, stats)
+    lock, deadline = threading.Lock(), time.time() + 12 * 60
+    def work(s):
+        if time.time() > deadline: return []
+        try: return _one(s, dd, stats, lock)
         except Exception as e:
-            log.warning("company failed (%s)", type(e).__name__)
+            log.warning("company failed (%s)", type(e).__name__); return []
+    with ThreadPoolExecutor(max_workers=8) as ex:
+        for f in as_completed([ex.submit(work, s) for s in companies]):
+            out += f.result()
     return out, stats
 
-def _one(s, dd, stats):
+def _one(s, dd, stats, lock):
     a = auditor.audit(s["company"], s.get("domain_hint", ""))
     if not a: return []
-    stats["audited"] += 1
+    with lock: stats["audited"] += 1
     people = stakeholders.extract(a["root"], s.get("people"))
-    stats["people"] += len(people)
+    with lock: stats["people"] += len(people)
     pat = verifier.detect_pattern(a["emails"], people, a["domain"])
     tier = stakeholders.size_tier(len(people), a["html"])
     extra = " | ".join(f"{k}: {v}" for k, v in {**a["socials"], "Site": a["meta"]}.items())
@@ -45,12 +50,12 @@ def _one(s, dd, stats):
         l["Email_Status"], route = verifier.verify(email, src, bool(pat))
         l["Lead_ID"] = l["Person_Fingerprint"]
         if route == "drop": stats["rejected"] += 1; continue
-        reason = dd.reject_reason(l)
-        if reason: stats["rejected"] += 1; continue
         l["Lead_Score"] = qc.score(l)
         ok, _ = qc.qc(l)
         l["QC_Passed_And_Status"] = "YES / Ready_To_Export" if ok else "NO"
-        dd.add(l); leads.append(l)
+        with lock:
+            if dd.reject_reason(l): stats["rejected"] += 1; continue
+            dd.add(l); leads.append(l)
     return leads
 
 def _email(parts, a, pat):

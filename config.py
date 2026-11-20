@@ -16,7 +16,7 @@ MIN_LEAD_SCORE = 65
 SHEET_CHUNK = 500
 CELL_MAX_CHARS = 1500
 ROTATION_ALERT_ROWS = 15000
-HTTP_TIMEOUT = 12
+HTTP_TIMEOUT = 8
 
 JOB_QUERIES = ["Meta Ads manager", "Performance Marketing", "Shopify developer"]
 JOB_LOCATIONS = {"US": "United States", "INDIA": "India"}

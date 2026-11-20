@@ -12,7 +12,7 @@ def fetch():
     for c in config.countries():
         for q in config.JOB_QUERIES:
             try:
-                df = scrape_jobs(site_name=["indeed", "linkedin"], search_term=q,
+                df = scrape_jobs(site_name=["indeed"], search_term=q,
                                  location=config.JOB_LOCATIONS[c], results_wanted=15,
                                  hours_old=72, country_indeed="USA" if c == "US" else "India")
             except Exception as e:
