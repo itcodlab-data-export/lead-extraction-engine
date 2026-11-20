@@ -16,6 +16,8 @@ NAME = re.compile(r"^[A-Z][a-z]+(?:[ '-][A-Z][a-z]+){1,2}$")
 PATHS = ["/team", "/about", "/about-us", "/leadership", "/pages/about-us", "/pages/team", "/company"]
 LINKEDIN = re.compile(r"https?://(?:[a-z]{2,3}\.)?linkedin\.com/in/[A-Za-z0-9_%-]+")
 
+TITLEWORDS = re.compile(r"\b(chief|officer|director|manager|president|founder|owner|chairman|executive|head|developer|vp|lead|ceo|cfo|cto|cmo|coo|partner|team|board|about|contact|our|the)\b", re.I)
+
 def track_of(role):
     if not role or JUNIOR.search(role):
         return ""
@@ -29,10 +31,12 @@ def _scrape_page(html):
     found = []
     for el in soup.find_all(["h2", "h3", "h4", "strong", "p", "span", "div"]):
         txt = el.get_text(" ", strip=True)
-        if not NAME.match(txt):
+        if not NAME.match(txt) or TITLEWORDS.search(txt):
             continue
         sib = el.find_next(["p", "span", "div", "h5", "h6"])
-        role = sib.get_text(" ", strip=True)[:80] if sib else ""
+        role = sib.get_text(" ", strip=True) if sib else ""
+        if len(role) > 70 or NAME.match(role):
+            continue
         tr = track_of(role)
         if tr:
             li = ""

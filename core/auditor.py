@@ -11,7 +11,7 @@ _PHONE = re.compile(r"(?:\+?\d{1,3}[\s.-]?)?(?:\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{
 _SOC = {"LinkedIn": "linkedin.com/company", "Instagram": "instagram.com/", "Facebook": "facebook.com/",
         "Twitter": "twitter.com/", "YouTube": "youtube.com/"}
 CONTACT_PATHS = ["/contact", "/pages/contact", "/policies/contact-information", "/privacy-policy"]
-INDUSTRY = [("Ecommerce_D2C", r"shopify|add to cart|checkout"), ("SaaS_Tech", r"saas|software|platform|api"),
+INDUSTRY = [("Ecommerce_D2C", r"shopify|add to cart|checkout"), ("SaaS_Tech", r"saas|software as a service|cloud software|\bapi\b"),
             ("Agency_Marketing", r"agency|marketing services"), ("Fintech", r"fintech|payments|loan"),
             ("Healthcare", r"health|clinic|wellness"), ("Education", r"course|learning|school"),
             ("RealEstate", r"real estate|property|homes"), ("Travel_Hospitality", r"travel|hotel|tour"),
@@ -49,7 +49,12 @@ def audit(company, hint=""):
         pages.append(net.text(root + p))
     blob = "\n".join(pages)
     emails = {e.lower() for e in _EMAIL.findall(blob) if e.lower().endswith(dom) or dom in e.lower()}
-    phones = list(dict.fromkeys(m.strip() for m in _PHONE.findall(blob)))[:2]
+    phones = []
+    for m in re.findall(r'href=["\']tel:([^"\']+)', blob, re.I):
+        d = re.sub(r"\D", "", m)
+        if 10 <= len(d) <= 13 and m.strip() not in phones:
+            phones.append(m.strip())
+    phones = phones[:2]
     socials = {k: v for k, v in _soc(blob).items()}
     low = html.lower()
     pixel = bool(re.search(r"fbq\(|connect\.facebook\.net/.*fbevents|facebook pixel", low))
