@@ -2,7 +2,7 @@
 import config
 
 TRACK_PTS = {"Executive": 10, "Marketing": 10, "Sales": 8, "Tech_IT": 8, "HR_Ops": 5}
-STATUS_PTS = {"Valid_MX_Direct": 30, "Pattern_Matched_MX": 22, "Permutated_Unverified": 10}
+STATUS_PTS = {"Valid_MX_Direct": 30, "Pattern_Matched_MX": 22, "API_Verified": 30, "SMTP_Verified": 30, "Permutated_Unverified": 10}
 
 def score(lead):
     s = STATUS_PTS.get(lead["Email_Status"], 0)
@@ -17,7 +17,7 @@ def score(lead):
 
 def qc(lead, dnc_hit=False):
     checks = [
-        lead["Email_Status"] in ("Valid_MX_Direct", "Pattern_Matched_MX", "Permutated_Unverified"),
+        lead["Email_Status"] in STATUS_PTS,
         bool(lead["Person_Fingerprint"]),
         bool(lead["Full_Name"]) and bool(lead["Company_Name"]),
         bool(lead["Industry_Tag"]),

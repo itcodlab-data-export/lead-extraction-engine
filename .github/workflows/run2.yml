@@ -20,7 +20,7 @@ permissions:
 jobs:
   run:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
         with:
@@ -30,29 +30,8 @@ jobs:
           python-version: "3.12"
           cache: pip
       - run: pip install -r requirements.txt
-      - name: Sync latest code from Drive
-        env:
-          GOOGLE_SA_JSON: ${{ secrets.GOOGLE_SA_JSON }}
-          FOLDER_ID: 1S-abPAElvGNPamJnrzoyQCHGJCdAh0nV
-        run: |
-          python - <<'PY'
-          import os, json, zipfile, io
-          from google.oauth2 import service_account
-          from google.auth.transport.requests import AuthorizedSession
-          try:
-              c = service_account.Credentials.from_service_account_info(json.loads(os.environ["GOOGLE_SA_JSON"]), scopes=["https://www.googleapis.com/auth/drive.readonly"])
-              S = AuthorizedSession(c)
-              q = "name='code.zip' and '%s' in parents and trashed=false" % os.environ["FOLDER_ID"]
-              f = S.get("https://www.googleapis.com/drive/v3/files", params={"q": q, "orderBy": "createdTime desc", "pageSize": 1, "fields": "files(id)"}, timeout=30).json()["files"][0]["id"]
-              r = S.get("https://www.googleapis.com/drive/v3/files/%s?alt=media" % f, timeout=60)
-              r.raise_for_status()
-              z = zipfile.ZipFile(io.BytesIO(r.content))
-              names = [n for n in z.namelist() if not n.startswith(".github/") and not n.startswith(".git/")]
-              z.extractall(".", members=names)
-              print("code synced from Drive:", len(names), "files")
-          except Exception as e:
-              print("code sync skipped:", type(e).__name__)
-          PY
+      - name: CI gate (offline + safety tests)
+        run: pip install pytest && python -m pytest -q tests/test_offline.py tests/test_safety_locks.py
       - name: Extract
         env:
           TARGET_COUNTRY: ${{ inputs.target_country || 'BOTH' }}
@@ -61,6 +40,8 @@ jobs:
           SEC_CONTACT: ${{ secrets.SEC_CONTACT }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          PRODUCTHUNT_TOKEN: ${{ secrets.PRODUCTHUNT_TOKEN }}
+          API_KEYS: ${{ secrets.API_KEYS }}
         run: python main.py
       - name: Keep-alive
         run: |

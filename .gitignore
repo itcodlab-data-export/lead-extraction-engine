@@ -5,3 +5,4 @@ __pycache__/
 *.pyc
 creds*
 service_account*
+.smtp_state*
