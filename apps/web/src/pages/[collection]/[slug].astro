@@ -1,0 +1,30 @@
+---
+import { getCollection, render } from "astro:content";
+import Base from "../../layouts/Base.astro";
+import BaseLink from "../../components/BaseLink.astro";
+import { service, software } from "../../lib/schema";
+
+export async function getStaticPaths() {
+  const names = ["services", "products", "blog", "case-studies"] as const;
+  const out = [];
+  for (const collection of names) {
+    for (const entry of await getCollection(collection)) out.push({ params: { collection, slug: entry.id }, props: { entry } });
+  }
+  return out;
+}
+const { collection, slug } = Astro.params;
+const { entry } = Astro.props;
+const { Content } = await render(entry);
+const path = `/${collection}/${slug}/`;
+const { title, description } = entry.data;
+const kind = collection === "services" ? service(title, description, path) : collection === "products" ? software(title, description, path) : null;
+const label = collection === "case-studies" ? "Case Studies" : collection![0].toUpperCase() + collection!.slice(1);
+---
+<Base title={title} description={description} path={path} graph={kind ? [kind] : []}
+  trail={[{ name: label, path: `/${collection}/` }, { name: title, path }]}>
+  <article class="wrap section max-w-3xl">
+    <h1>{title}</h1>
+    <p class="lede speakable mt-4">{description}</p>
+    <div class="prose-lab mt-10"><Content components={{ a: BaseLink }} /></div>
+  </article>
+</Base>

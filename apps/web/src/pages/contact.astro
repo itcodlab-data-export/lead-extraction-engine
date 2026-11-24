@@ -1,0 +1,20 @@
+---
+import Base from "../layouts/Base.astro";
+import InquiryForm from "../components/InquiryForm.astro";
+import CalEmbed from "../components/CalEmbed.astro";
+---
+<Base title="Contact" path="/contact/" trail={[{ name: "Contact", path: "/contact/" }]} pageType="ContactPage"
+  description="Book a free audit or send IT Code Lab an inquiry about Meta Ads, social growth or automation.">
+  <section class="wrap section">
+    <h1>Talk to IT Code Lab.</h1>
+    <p class="lede speakable mt-4 max-w-2xl">Send an inquiry, or book a free audit directly in the calendar below.</p>
+    <div class="mt-12 grid gap-12 lg:grid-cols-2">
+      <div>
+        <h2 class="mb-5 text-2xl">Send an inquiry</h2>
+        <InquiryForm source="contact" selectLabel="I'm interested in"
+          options={["Meta Ads + CAPI", "Social Media Growth", "IT & Automation", "Something else"]} cta="Send inquiry" />
+      </div>
+      <CalEmbed />
+    </div>
+  </section>
+</Base>

@@ -1,0 +1,26 @@
+---
+import Base from "../layouts/Base.astro";
+import ChamferCard from "../components/ChamferCard.astro";
+import RoasCalc from "../components/RoasCalc";
+import { withBase } from "../lib/withBase";
+import { software } from "../lib/schema";
+---
+<Base title="Lab — Free Marketing Tools" path="/lab/" trail={[{ name: "Lab", path: "/lab/" }]}
+  description="Free client-side tools from IT Code Lab, starting with a Meta Ads ROAS and break-even CPA calculator."
+  graph={[software("Meta Ads ROAS & Break-Even CPA Calculator", "Free browser calculator for ROAS, break-even ROAS, break-even CPA and profit after ad spend.", "/lab/")]}>
+  <section class="wrap section">
+    <p class="eyebrow">Community hub</p>
+    <h1 class="mt-3">The Lab.</h1>
+    <p class="lede speakable mt-4 max-w-2xl">Free tools that run entirely in your browser. Nothing you type is sent anywhere.</p>
+    <div class="mt-12">
+      <ChamferCard notch>
+        <h2 class="mb-6 text-2xl">Meta Ads ROAS &amp; Break-Even CPA Calculator</h2>
+        <RoasCalc client:load />
+      </ChamferCard>
+    </div>
+    <div class="tile mt-12 flex flex-wrap items-center justify-between gap-4">
+      <p class="max-w-xl text-sm text-ink-2"><strong class="text-ink">Join the free community.</strong> Saved audits and more tools arrive with the portal's free community login, which is not open yet.</p>
+      <a href={withBase("/early-access/")} class="btn-primary">Join Free Community</a>
+    </div>
+  </section>
+</Base>
