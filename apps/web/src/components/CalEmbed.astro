@@ -1,0 +1,13 @@
+---
+import { CAL_LINK } from "../lib/site";
+---
+<div id="book" class="scroll-mt-24">
+  <h2 class="text-2xl">Book a free audit</h2>
+  <p class="mt-2 text-sm text-ink-2">Times display in your own timezone (for example US Eastern or India Standard Time).</p>
+  {CAL_LINK ? (
+    <iframe title="Book a call on Cal.com" loading="lazy" class="mt-5 w-full border border-hairline"
+      style="height:640px;border-radius:4px" src={`https://cal.com/${CAL_LINK}?embed=true&layout=month_view`}></iframe>
+  ) : (
+    <p class="tile mt-5 text-sm text-ink-2">Online scheduling opens shortly. Send the form and we will reply with available times.</p>
+  )}
+</div>

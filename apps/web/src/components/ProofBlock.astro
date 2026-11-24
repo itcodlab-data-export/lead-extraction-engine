@@ -1,0 +1,22 @@
+---
+const stats = [
+  ["14", "Intent sources", "Public signals the Lead Extraction Engine monitors."],
+  ["9", "Inbox safety layers", "Barriers between a send and your domain reputation."],
+  ["CAPI", "Server-side + SEO/AEO/GEO", "Events measured server-side; pages built to be cited by search and AI."],
+];
+---
+<section class="bg-surface" aria-labelledby="proof-h">
+  <div class="wrap section">
+    <p class="eyebrow">System &amp; technical proof</p>
+    <h2 id="proof-h" class="mt-3 max-w-3xl">Architecture you can inspect, not slogans.</h2>
+    <dl class="mt-12 grid gap-px bg-[var(--border-hairline)] md:grid-cols-3" style="border:1px solid var(--border-hairline)">
+      {stats.map(([n, t, d]) => (
+        <div class="bg-canvas p-8">
+          <dt class="font-mono text-xs uppercase tracking-widest text-ink-2">{t}</dt>
+          <dd class="mt-4 font-display text-6xl font-bold text-ink" style="letter-spacing:-0.03em">{n}</dd>
+          <dd class="mt-3 text-sm text-ink-2">{d}</dd>
+        </div>
+      ))}
+    </dl>
+  </div>
+</section>

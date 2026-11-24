@@ -1,0 +1,19 @@
+/* IT Code Lab — shared tokens. 85% canvas/glass · 10% blue · 5% red. */
+:root {
+  --bg-canvas: #ffffff;
+  --bg-surface: #f5f5f7;
+  --glass-bg: rgba(255, 255, 255, 0.72);
+  --border-hairline: rgba(15, 23, 42, 0.08);
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --accent-blue: #0071e3; /* 10% — CTAs, active tabs, product badges */
+  --accent-red: #e11d48; /* 5% — live pulse, chamfer notches, high-signal badges */
+  --cut: 14px;
+  --shadow-card: drop-shadow(0 12px 32px rgba(15, 23, 42, 0.06));
+  --section-y: clamp(96px, 9vw, 128px);
+  --container: 1200px;
+  --gutter: 20px;
+  --font-sans: "Inter Variable", Inter, system-ui, sans-serif;
+  --font-display: "Plus Jakarta Sans Variable", "Plus Jakarta Sans", Inter, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono Variable", "JetBrains Mono", ui-monospace, monospace;
+}

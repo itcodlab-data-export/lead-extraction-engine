@@ -1,0 +1,36 @@
+---
+import { getCollection } from "astro:content";
+import Base from "../../layouts/Base.astro";
+import { withBase } from "../../lib/withBase";
+
+export async function getStaticPaths() {
+  const meta: Record<string, [string, string]> = {
+    services: ["Services", "What IT Code Lab does for growing businesses."],
+    products: ["Products", "In-house AI products built and run by IT Code Lab."],
+    blog: ["Blog", "Notes from the lab."],
+    "case-studies": ["Case Studies", "Documented client work."],
+  };
+  const out = [];
+  for (const name of Object.keys(meta)) {
+    const items = (await getCollection(name as "services")).sort((a, b) => a.data.order - b.data.order);
+    if (items.length) out.push({ params: { collection: name }, props: { items, title: meta[name][0], desc: meta[name][1] } });
+  }
+  return out;
+}
+const { collection } = Astro.params;
+const { items, title, desc } = Astro.props;
+---
+<Base title={title} description={desc} path={`/${collection}/`} trail={[{ name: title, path: `/${collection}/` }]}>
+  <section class="wrap section">
+    <h1>{title}</h1>
+    <p class="lede speakable mt-4 max-w-2xl">{desc}</p>
+    <ul class="mt-12 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+      {items.map((e) => (
+        <li class="tile">
+          <h2 class="text-xl"><a href={withBase(`/${collection}/${e.id}/`)}>{e.data.title}</a></h2>
+          <p class="mt-2 text-sm text-ink-2">{e.data.description}</p>
+        </li>
+      ))}
+    </ul>
+  </section>
+</Base>

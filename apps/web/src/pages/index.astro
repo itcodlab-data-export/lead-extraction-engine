@@ -1,0 +1,31 @@
+---
+import Base from "../layouts/Base.astro";
+import Hero from "../components/Hero.astro";
+import SandboxSection from "../components/SandboxSection.astro";
+import Pillars from "../components/Pillars.astro";
+import ProofBlock from "../components/ProofBlock.astro";
+import SafetyStrip from "../components/SafetyStrip.astro";
+import FaqSection from "../components/FaqSection.astro";
+import CtaBand from "../components/CtaBand.astro";
+import { FAQ } from "../lib/faq";
+import { faqPage, service, software } from "../lib/schema";
+
+const graph = [
+  service("Meta Ads with Server-Side CAPI", "Campaign structure, creative testing and server-side conversion tracking on Meta.", "/services/meta-ads-capi/"),
+  service("Social Media Growth", "Content systems and community management for social channels.", "/services/social-media-growth/"),
+  service("IT & Automation", "Serverless workflows, integrations and AI automation.", "/services/it-automation/"),
+  software("Lead Extraction Engine", "Collects public intent signals from 14 sources into a Google Sheet you own.", "/products/lead-extraction-engine/"),
+  software("Lead Sending Engine", "Safety-first lead sending with fixed ceilings and fail-closed controls. In development.", "/products/lead-sending-engine/"),
+  faqPage(FAQ),
+];
+---
+<Base title="Performance Marketing & AI Products" path="/" graph={graph}
+  description="IT Code Lab: Meta Ads with server-side CAPI, social media growth and IT automation, plus in-house Lead Extraction and Lead Sending engines.">
+  <Hero />
+  <SandboxSection />
+  <Pillars />
+  <ProofBlock />
+  <SafetyStrip />
+  <FaqSection />
+  <CtaBand />
+</Base>
