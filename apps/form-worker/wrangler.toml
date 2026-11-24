@@ -1,9 +1,0 @@
-name = "itcodlab-form-worker"
-main = "worker.js"
-compatibility_date = "2025-01-01"
-
-[vars]
-# Comma list of exact origins (no trailing slash). Add your GitHub Pages origin for staging.
-ALLOWED_ORIGINS = "https://itcodlab.com,https://www.itcodlab.com"
-
-# Secrets (set with `wrangler secret put`): TURNSTILE_SECRET, DATABASE_URL, NTFY_TOPIC

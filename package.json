@@ -1,9 +1,0 @@
-{
-  "name": "itcodlab-monorepo",
-  "private": true,
-  "workspaces": ["packages/design-tokens", "apps/web"],
-  "scripts": {
-    "build": "npm run build -w apps/web",
-    "audit": "npm run audit -w apps/web"
-  }
-}

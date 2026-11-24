@@ -1,5 +1,0 @@
----
-import { withBase } from "../lib/withBase";
-const { href = "", ...rest } = Astro.props;
----
-<a href={withBase(href)} {...rest}><slot /></a>
