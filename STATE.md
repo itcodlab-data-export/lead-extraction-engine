@@ -29,7 +29,7 @@ run_cap: 8
 Shared server SMTP: 60/day UTC, 15/hr, 5 per Google/Microsoft MX per hr (ceiling 6), 8/run, jitter 30-60s, Lead_Score>=75 and priority 1 only, 72h lock on 554/Spamhaus/reputation 450. Warm-up ceiling ramp 50/100/200/300 per day, operational cap 60. A request for 200 shared-server checks/day was REFUSED (2026-11-26); volume must come from free APIs.
 
 ## Open blockers / known issues
-1. PR #4 unmerged (Claude is blocked from merging) AND needs Faiz to add the line `APPROVED-BY-FAIZ` under the PR #4 entry in CHANGELOG.md (it changes protected files: safety test file, tools/, ci.yml). CI `ci` will fail until he does; this is by design.
+1. PR #4 unmerged (Claude is blocked from merging) AND needs Faiz to add ONE new line at the end of CHANGELOG.md in the form `APPROVED-BY-FAIZ: 2026-11-26 PR4 protected files ok` (it changes protected files: safety test file, tools/, ci.yml). CI `ci` will fail until he does; this is by design.
 2. Hot=0: unknown whether GitHub Secrets `API_KEYS` (Reoon/Verifalia/ZeroBounce/Abstract/Hunter) and `SHARED_VERIFIER_URL`/`SHARED_VERIFIER_KEY` exist (Claude cannot read secrets). `PRODUCTHUNT_TOKEN`, `YOUTUBE_API_KEY` not set (sources skip).
 3. funding=0 and shopify dork=0 on every recent run (also on main); ats=0. Cause unknown (feeds empty at night / DDG blocking runner IP).
 4. Intermittent `company failed (KeyError)` in one company worker per run (not yet traced).
@@ -39,4 +39,4 @@ Shared server SMTP: 60/day UTC, 15/hr, 5 per Google/Microsoft MX per hr (ceiling
 8. Branch protection requiring the `ci` check is a GitHub setting only Faiz can enable (see Next step).
 
 ## Exact next step
-Faiz: (1) add `APPROVED-BY-FAIZ` line to the PR #4 CHANGELOG entry (edit file on the PR branch in GitHub web editor) and merge PR #4; (2) GitHub Settings > Branches > Add rule for `main` > "Require status checks to pass" > select `gate` (job of workflow `ci`) so rules cannot be bypassed; (3) check Settings > Secrets and variables > Actions for `API_KEYS`, `SHARED_VERIFIER_URL`. Then Claude: trace KeyError, fix Domain_Cache header, investigate funding/shopify zeros.
+Faiz: (1) add the approval line (see blocker 1) at the bottom of CHANGELOG.md on the PR branch (GitHub web editor) and merge PR #4; (2) GitHub Settings > Branches > Add rule for `main` > "Require status checks to pass" > select `gate` (job of workflow `ci`) so rules cannot be bypassed; (3) check Settings > Secrets and variables > Actions for `API_KEYS`, `SHARED_VERIFIER_URL`. Then Claude: trace KeyError, fix Domain_Cache header, investigate funding/shopify zeros.

@@ -5,7 +5,7 @@ Extraction-only lead engine (GitHub Actions -> Google Sheet). No sending, no cop
 1. Read STATE.md (live truth, blockers, next step). 2. Read tail of CHANGELOG.md. 3. ARCHITECTURE.md only for code work. Never rely on chat history/summaries.
 
 ## Hard rules (enforced by CI: tests/ + tools/check_pr_rules.py + .github/workflows/ci.yml)
-- Verification ceilings live ONLY in core/safety_guard.py (pinned by tests/test_safety_locks.py). Never raise, bypass or pin-edit them. Changing safety_guard.py / test_safety_locks.py / tools/ / ci.yml needs the literal tag `APPROVED-BY-FAIZ` in the CHANGELOG entry. ONLY Faiz writes that tag; Claude must NEVER add it itself.
+- Verification ceilings live ONLY in core/safety_guard.py (pinned by tests/test_safety_locks.py). Never raise, bypass or pin-edit them. Changing safety_guard.py / test_safety_locks.py / tools/ / ci.yml needs a new CHANGELOG line `APPROVED-BY-FAIZ: YYYY-MM-DD <what>`. ONLY Faiz writes that line; Claude must NEVER add it itself.
 - Shared-server SMTP: 60/day, 15/hr, 5-6/hr per MX provider, 8/run, jitter 30-60s, only Lead_Score>=75 P1. Counter unreadable => skip SMTP (fail-closed). Never run bulk SMTP on shared hosting beyond this. Never put role inboxes in hot.
 - Every code/workflow/config/test change MUST also update STATE.md and append to CHANGELOG.md (append-only, never edit old lines). New module => document it in ARCHITECTURE.md (test fails otherwise).
 - Files < 150 lines, one job each. Settings only in config.py. UTC dates only. One source failing never stops a run (try/except).

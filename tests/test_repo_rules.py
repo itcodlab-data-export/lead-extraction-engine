@@ -62,4 +62,5 @@ def test_rules_changelog_append_only():
 def test_rules_protected_files_need_faiz_tag():
     ch = {"core/safety_guard.py", "STATE.md", "CHANGELOG.md"}
     assert any("APPROVED-BY-FAIZ" in v for v in rules.violations(ch, {"CHANGELOG.md": ["bump ceiling"]}, {"CHANGELOG.md": []}))
-    assert not rules.violations(ch, {"CHANGELOG.md": ["APPROVED-BY-FAIZ ceiling"]}, {"CHANGELOG.md": []})
+    assert any("APPROVED-BY-FAIZ" in v for v in rules.violations(ch, {"CHANGELOG.md": ["mentions APPROVED-BY-FAIZ in prose"]}, {"CHANGELOG.md": []}))
+    assert not rules.violations(ch, {"CHANGELOG.md": ["APPROVED-BY-FAIZ: 2026-11-26 raise nothing, test fix"]}, {"CHANGELOG.md": []})

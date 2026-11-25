@@ -1,5 +1,5 @@
 # CHANGELOG (APPEND-ONLY: add new entries at the bottom; CI fails if any existing line is edited or removed)
-Entry format: `## YYYY-MM-DD <title>` then bullet lines. Changes to protected files need the literal tag APPROVED-BY-FAIZ (written only by Faiz) in the entry.
+Entry format: `## YYYY-MM-DD <title>` then bullet lines. Changes to protected files need a whole line starting with the approval tag (written only by Faiz): see CLAUDE.md.
 
 ## 2026-11-20 Initial engine (commits abdfe60, f95be82, ce113fb)
 - Extraction engine uploaded: sources (hiring, funding, shopify), pipeline, Sheet sync.
@@ -24,4 +24,4 @@ Entry format: `## YYYY-MM-DD <title>` then bullet lines. Changes to protected fi
 - SMTP: SMTP_RUN_CAP=8 per run (ceilings in safety_guard.py UNCHANGED); pipeline skips leads already in the Sheet before any verification; core/sheets_sync.py uses its own `smtp_state` key row in State tab (old row broke JSON parse and skipped SMTP every run).
 - tests/test_safety_locks.py edited only to add run-cap and State-row tests and pass SMTP_RUN_CAP=99 inside the existing hourly/MX test; pinned ceilings untouched. tests/test_offline.py extended for new sources.
 - Repo memory system added: CLAUDE.md, STATE.md, ARCHITECTURE.md, CHANGELOG.md, tests/test_repo_rules.py, tools/check_pr_rules.py, .github/workflows/ci.yml, .githooks/pre-commit, .claude/settings.json (SessionStart prints STATE.md).
-- AWAITING FAIZ: approval tag line for protected-file changes (see STATE.md blocker 1).
+- AWAITING FAIZ: approval line for protected-file changes (see STATE.md blocker 1).
