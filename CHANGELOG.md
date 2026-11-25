@@ -27,3 +27,6 @@ Entry format: `## YYYY-MM-DD <title>` then bullet lines. Changes to protected fi
 - AWAITING FAIZ: approval line for protected-file changes (see STATE.md blocker 1).
 
 APPROVED-BY-FAIZ: 2026-11-26 PR4 protected files ok
+
+## 2026-11-26 PR #4 merged
+- PR #4 squash-merged after CI gate green; STATE.md updated (3-hour schedule live). Branch protection still to be enabled by Faiz.
