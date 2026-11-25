@@ -35,12 +35,18 @@ SMTP_MIN_SCORE = 75             # only top P1 decision-makers
 SMTP_MAX_PRIORITY = 1
 SMTP_WARMUP_START = os.getenv("SMTP_WARMUP_START", "")  # UTC YYYY-MM-DD; empty = auto (first SMTP day)
 SMTP_STATE_FILE = os.getenv("SMTP_STATE_FILE", ".smtp_state.json")
+SMTP_RUN_CAP = 8                # per run: 8 runs/day x 8 = spread, daily cap 60 still clamps
 SMTP_FLUSH_EVERY = 5            # write counter to State tab every N checks
 SHARED_VERIFIER_URL = os.getenv("SHARED_VERIFIER_URL", "")
 BATCH1_BUDGET_SEC = 300         # combined time cap for the 3 Batch-1 sources
-BATCH1_MAX_SIGNALS = 30
+BATCH1_MAX_SIGNALS = 60
 
-JOB_QUERIES = ["Meta Ads manager", "Performance Marketing", "Shopify developer"]
+JOB_QUERIES = ["Meta Ads manager", "Performance Marketing", "Shopify developer", "Facebook Ads specialist", "paid social manager",
+               "ecommerce manager", "growth marketing manager", "digital marketing manager", "CRO specialist", "D2C marketing",
+               "media buyer", "Shopify store manager"]
+JOB_QUERIES_PER_RUN = 3   # rotates every 3-hour slot so each run sees new jobs
+JOB_CITIES = {"US": ["New York, NY", "Los Angeles, CA", "Austin, TX", "Chicago, IL", "Miami, FL", "Seattle, WA", "Boston, MA", "Denver, CO"],
+              "INDIA": ["Mumbai", "Delhi", "Bangalore", "Pune", "Hyderabad", "Chennai", "Ahmedabad", "Nagpur"]}
 JOB_LOCATIONS = {"US": "United States", "INDIA": "India"}
 
 def countries():

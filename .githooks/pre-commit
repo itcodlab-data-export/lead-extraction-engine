@@ -1,0 +1,4 @@
+#!/bin/sh
+# Local gate: same rules as CI. Enable once: git config core.hooksPath .githooks
+python -m pytest -q tests || exit 1
+python tools/check_pr_rules.py --staged

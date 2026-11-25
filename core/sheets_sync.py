@@ -74,15 +74,22 @@ class Sheet:
             _retry(ws.update, values=[head], range_name="A1", value_input_option="RAW")
         return ws
 
+    def _state_row(self, ws):
+        """(row number, value) of the 'smtp_state' key in State!A:B; other keys (old Updated_IST etc.) are never touched."""
+        for i, r in enumerate(_retry(ws.get, "A1:B200"), 1):
+            if r and r[0] == "smtp_state": return i, (r[1] if len(r) > 1 else "")
+        return 0, ""
+
     def read_state(self):
-        """SMTP counter dict ({} = never used). RAISES on any read failure -> caller fails closed."""
-        ws = self._aux("State", ["Key", "Value"])
-        row = _retry(ws.get, "A2:B2")
-        return json.loads(row[0][1]) if row and len(row[0]) > 1 and row[0][1] else {}
+        """SMTP counter dict ({} = never used). RAISES on any read/parse failure -> caller fails closed."""
+        _, val = self._state_row(self._aux("State", ["Key", "Value"]))
+        return json.loads(val) if val else {}
 
     def write_state(self, st):
         ws = self._aux("State", ["Key", "Value"])
-        _retry(ws.update, values=[["smtp_state", json.dumps(st)]], range_name="A2", value_input_option="RAW")
+        i, _ = self._state_row(ws)
+        if i: _retry(ws.update, values=[["smtp_state", json.dumps(st)]], range_name=f"A{i}", value_input_option="RAW")
+        else: _retry(ws.append_rows, [["smtp_state", json.dumps(st)]], value_input_option="RAW")
 
     def read_domain_cache(self):
         try: return {r["Domain"]: r for r in _retry(self._aux("Domain_Cache", DC_COLS).get_all_records) if r.get("Domain")}

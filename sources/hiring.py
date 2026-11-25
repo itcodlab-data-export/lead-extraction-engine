@@ -1,5 +1,6 @@
 """Source 1: hiring signals via python-jobspy (Meta Ads / Performance / Shopify jobs)."""
 import config
+from sources.dork import pick as dork_pick
 from core import logger
 log = logger.get()
 
@@ -10,7 +11,7 @@ def fetch():
         log.warning("hiring: jobspy missing (%s)", type(e).__name__); return []
     out = []
     for c in config.countries():
-        for q in config.JOB_QUERIES:
+        for q in dork_pick(config.JOB_QUERIES, config.JOB_QUERIES_PER_RUN):
             try:
                 df = scrape_jobs(site_name=["indeed"], search_term=q,
                                  location=config.JOB_LOCATIONS[c], results_wanted=15,

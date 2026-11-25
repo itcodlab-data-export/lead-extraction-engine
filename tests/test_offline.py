@@ -94,3 +94,36 @@ def test_batch1_parallel_isolated_and_capped():
     t0 = time.time(); batch1.fetch(budget=5, sources=tuple((str(i), lambda deadline=None: time.sleep(0.4) or []) for i in range(3)))
     assert time.time() - t0 < 1.0                                          # ran in parallel (3 x 0.4s < 1s)
     assert config.BATCH1_BUDGET_SEC == 300
+
+# ---- Batch 2/3 (offline) ----
+from sources import dork, social_dorks, launches, marketplaces, competitor_reviews, youtube, batch2
+
+def test_dork_helpers(monkeypatch):
+    assert dork.site_in("check https://reddit.com/x and my store glowbar.co.in thanks") == "glowbar.co.in"
+    assert dork.site_in("only reddit.com and shopify.com") == ""
+    items = list(range(12)); assert len(set(dork.pick(items, 3))) == 3 and 0 <= dork.slot(8) < 8
+    html = '<div class="result"><a class="result__a" href="//duckduckgo.com/l/?uddg=https%3A%2F%2Fa.com%2Fx">T</a><a class="result__snippet">snip glowbar.com</a></div>'
+    monkeypatch.setattr(dork.net, "text", lambda *a, **k: html)
+    assert dork.search("q") == [{"url": "https://a.com/x", "title": "T", "snippet": "snip glowbar.com"}]
+
+def test_dork_sources_build_signals(monkeypatch):
+    res = [{"url": "https://reddit.com/r/x", "title": "pixel broken", "snippet": "my store glowbar.com has no sales"},
+           {"url": "https://reddit.com/r/y", "title": "no domain", "snippet": "nothing here"}]
+    monkeypatch.setattr(dork, "search", lambda q: res); monkeypatch.setattr(dork.net, "jitter", lambda x: None)
+    monkeypatch.setattr(config, "TARGET_COUNTRY", "US")
+    for mod in (social_dorks, launches, marketplaces, competitor_reviews):
+        out = mod.fetch()
+        assert out and all(s["domain_hint"] == "glowbar.com" and s["country"] == "US" and s["people"] == [] for s in out), mod.__name__
+        assert len({s["company"] for s in out}) == 1               # deduped by company
+
+def test_youtube_skips_without_key_and_batch_registry(monkeypatch):
+    monkeypatch.delenv("YOUTUBE_API_KEY", raising=False)
+    assert youtube.fetch() == [] and len(batch2.SOURCES) == 5
+
+def test_hiring_rotation_changes_with_slot(monkeypatch):
+    seen = set()
+    for h in range(0, 24, 3):
+        monkeypatch.setattr(dork, "utc_now", lambda h=h: datetime.datetime(2026, 11, 25, h, 0, tzinfo=datetime.timezone.utc))
+        seen.add(tuple(dork.pick(config.JOB_QUERIES, config.JOB_QUERIES_PER_RUN)))
+    assert len(seen) >= 4
+import datetime
