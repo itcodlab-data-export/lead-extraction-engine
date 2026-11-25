@@ -11,9 +11,8 @@ run_cap: 8
 - Data: Google Sheet "Lead Extraction Master" id `1xmng34DW_b-TqH5nG8bktCDo0f-yFoMdKWccGjohRy4` (Service Account `GOOGLE_SA_JSON`).
 - Brain mirror (human-readable copy, written from chat only): Drive > Data Extraction > Brain/ (current_state.md, decisions.md, assets_map.md, README_LOAD_BRAIN.md). This repo's STATE.md wins on conflict.
 
-## Production vs PR #4
-- `main` TODAY (before PR #4 merge): workflow `run_leads2`, 4 runs/day (cron 30 0,6,12,18 UTC), old SMTP-counter bug => shared-server SMTP skipped every run, Hot=0. Sources: hiring, funding, shopify dork, batch1.
-- PR #4 (branch `scraping-batch2-3-3h-schedule`, NOT merged; Faiz must click Merge): cron `17 */3 * * *` (8/day), Batch2/3 sources, SMTP counter fix, SMTP_RUN_CAP=8, skip-known-leads-before-verify, hiring query rotation, repo memory system (this file set) + CI gate. After merge, the STATE-CHECK block above is true on main.
+## Production
+- PR #4 MERGED 2026-11-26 (squash, CI `gate` green). `main` now: workflow `run_leads2` every 3 hours (cron 17 */3 * * *, 8 runs/day), Batch1+2+3 sources, SMTP counter fix, SMTP_RUN_CAP=8, skip-known-leads-before-verify, hiring query rotation, repo memory system + CI gate.
 
 ## Workflows (.github/workflows)
 - run2.yml `run_leads2` ACTIVE: tests gate -> `python main.py` -> keep-alive. timeout 30 min. dispatch input target_country BOTH|US|INDIA.
@@ -39,4 +38,4 @@ Shared server SMTP: 60/day UTC, 15/hr, 5 per Google/Microsoft MX per hr (ceiling
 8. Branch protection requiring the `ci` check is a GitHub setting only Faiz can enable (see Next step).
 
 ## Exact next step
-Faiz: (1) add the approval line (see blocker 1) at the bottom of CHANGELOG.md on the PR branch (GitHub web editor) and merge PR #4; (2) GitHub Settings > Branches > Add rule for `main` > "Require status checks to pass" > select `gate` (job of workflow `ci`) so rules cannot be bypassed; (3) check Settings > Secrets and variables > Actions for `API_KEYS`, `SHARED_VERIFIER_URL`. Then Claude: trace KeyError, fix Domain_Cache header, investigate funding/shopify zeros.
+Faiz: (1) GitHub repo > Settings > Branches > Add branch protection rule > Branch name pattern `main` > tick "Require status checks to pass before merging" > search and select `gate` > Create; (2) check Settings > Secrets and variables > Actions for `API_KEYS`, `SHARED_VERIFIER_URL`. Then Claude: watch first 3-hour scheduled runs, trace KeyError, fix Domain_Cache header, investigate funding/shopify zeros.
