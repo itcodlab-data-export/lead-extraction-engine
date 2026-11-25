@@ -6,3 +6,4 @@ __pycache__/
 creds*
 service_account*
 .smtp_state*
+!.claude/settings.json
