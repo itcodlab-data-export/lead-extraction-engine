@@ -152,3 +152,20 @@ def test_files_under_150_lines():
 def test_per_run_cap_spreads_the_daily_cap(tmp_path):
     g = gate(tmp_path); n = sum(g.acquire("other") for _ in range(20))
     assert n == config.SMTP_RUN_CAP == 8 and config.SMTP_RUN_CAP * 8 >= 60 > config.SMTP_RUN_CAP * 7 - 1
+
+def test_state_uses_own_key_row_and_ignores_old_rows():
+    from core.sheets_sync import Sheet
+    class WS:
+        def __init__(s, rows): s.rows, s.sent = rows, []
+        def get(s, rng): return s.rows
+        def update(s, values, range_name, value_input_option=None): s.sent.append(("u", range_name, values))
+        def append_rows(s, rows, value_input_option=None): s.sent.append(("a", rows))
+    sh = Sheet.__new__(Sheet)
+    old = [["Key", "Value"], ["Updated_IST", "2026-11-22 19:03"], ["Code_Version", "2026-11-22.8"]]
+    ws = WS(old); sh._aux = lambda n, h: ws
+    assert sh.read_state() == {}                       # old v.8 rows no longer break the counter
+    sh.write_state({"day_n": 3}); assert ws.sent[0][0] == "a" and ws.sent[0][1][0][0] == "smtp_state"
+    ws = WS(old + [["smtp_state", '{"day_n": 7}']]); assert sh.read_state() == {"day_n": 7}
+    sh.write_state({"day_n": 8}); assert ws.sent[0][:2] == ("u", "A4")
+    ws = WS(old + [["smtp_state", "garbage"]])
+    with pytest.raises(Exception): sh.read_state()    # corrupt counter still fails closed
