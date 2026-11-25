@@ -50,7 +50,7 @@ def test_warmup_ramp():
 
 # ---- 2. dual lock: hourly / per-MX / daily, 429 ----------------------------------------
 def test_hourly_cap_and_mx_cap(tmp_path):
-    g = gate(tmp_path)
+    g = gate(tmp_path, cfg(SMTP_RUN_CAP=99))
     assert [g.acquire("google") for _ in range(7)] == [True] * 5 + [False] * 2   # config MX cap 5
     assert [g.acquire("other") for _ in range(12)].count(True) == 10             # total hits 15
     assert g.check("other") == (False, "HOURLY_CAP")
@@ -148,3 +148,7 @@ def test_utc_only_dates():
 def test_files_under_150_lines():
     for f in glob.glob("core/*.py") + glob.glob("sources/*.py") + ["main.py", "config.py"]:
         assert len(open(f).read().splitlines()) < 150, f
+
+def test_per_run_cap_spreads_the_daily_cap(tmp_path):
+    g = gate(tmp_path); n = sum(g.acquire("other") for _ in range(20))
+    assert n == config.SMTP_RUN_CAP == 8 and config.SMTP_RUN_CAP * 8 >= 60 > config.SMTP_RUN_CAP * 7 - 1

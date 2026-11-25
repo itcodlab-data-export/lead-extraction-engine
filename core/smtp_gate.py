@@ -92,6 +92,7 @@ class SmtpGate:
         """Serialised: check, jitter, count. Returns True if the caller may do ONE SMTP check."""
         with self.lk:
             ok, _ = self.check(provider)
+            if self.used >= getattr(self.cfg, "SMTP_RUN_CAP", 10 ** 9): ok = False   # per-run share of the daily cap
             wait = random.uniform(*self.cfg.SMTP_JITTER)
             if not ok or (deadline and time.time() + wait > deadline): return False
             self._sleep(wait)

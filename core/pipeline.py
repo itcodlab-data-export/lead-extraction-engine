@@ -51,6 +51,8 @@ def _one(s, dd, stats, lock, gate, cache, deadline):
         email, src = _email(parts, a, pat)
         if not email: continue
         l["Email"], l["Email_Source"] = email, src
+        if l["Person_Fingerprint"] in dd.fp:   # already in the Sheet: never spend a verification on it
+            stats["rejected"] += 1; continue
         l["Email_Status"], route = verifier.verify(email, src, bool(pat))
         l["Lead_ID"] = l["Person_Fingerprint"]
         if route == "smtp":

@@ -2,7 +2,7 @@
 import sys, config
 from core import logger, alert, dedup, safety_guard, smtp_gate, apiverify
 from core.pipeline import build_leads
-from sources import hiring, funding, shopify, batch1
+from sources import hiring, funding, shopify, batch1, batch2
 log = logger.get()
 
 def _gate(sh):
@@ -25,7 +25,7 @@ def main():
     try: signals += shopify.fetch(signals)
     except Exception as e:
         errors += 1; log.error("source shopify failed (%s)", type(e).__name__)
-    try: b1 = batch1.fetch()
+    try: b1 = batch1.fetch(sources=batch1.SOURCES + batch2.SOURCES)
     except Exception as e:
         errors += 1; b1 = []; log.error("source batch1 failed (%s)", type(e).__name__)
     cap = config.MAX_COMPANIES_PER_RUN * 2
