@@ -25,3 +25,5 @@ Entry format: `## YYYY-MM-DD <title>` then bullet lines. Changes to protected fi
 - tests/test_safety_locks.py edited only to add run-cap and State-row tests and pass SMTP_RUN_CAP=99 inside the existing hourly/MX test; pinned ceilings untouched. tests/test_offline.py extended for new sources.
 - Repo memory system added: CLAUDE.md, STATE.md, ARCHITECTURE.md, CHANGELOG.md, tests/test_repo_rules.py, tools/check_pr_rules.py, .github/workflows/ci.yml, .githooks/pre-commit, .claude/settings.json (SessionStart prints STATE.md).
 - AWAITING FAIZ: approval line for protected-file changes (see STATE.md blocker 1).
+
+APPROVED-BY-FAIZ: 2026-11-26 PR4 protected files ok
