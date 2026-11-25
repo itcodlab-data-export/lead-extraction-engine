@@ -51,3 +51,7 @@ JOB_LOCATIONS = {"US": "United States", "INDIA": "India"}
 
 def countries():
     return ["US", "INDIA"] if TARGET_COUNTRY == "BOTH" else [TARGET_COUNTRY]
+
+# Bump VERSION + BRAIN_NOTE on every code/rule change: first run of a new VERSION writes one line to the Brain tab (test: VERSION must appear in CHANGELOG.md).
+VERSION = "2026-11-26.1"
+BRAIN_NOTE = "Run_Log + Brain auto-written again; Domain_Cache legacy rows tolerated (KeyError fixed); old unpack/daily_leads workflows removed"

@@ -11,14 +11,14 @@ run_cap: 8
 - Data: Google Sheet "Lead Extraction Master" id `1xmng34DW_b-TqH5nG8bktCDo0f-yFoMdKWccGjohRy4` (Service Account `GOOGLE_SA_JSON`).
 - Brain mirror (human-readable copy, written from chat only): Drive > Data Extraction > Brain/ (current_state.md, decisions.md, assets_map.md, README_LOAD_BRAIN.md). This repo's STATE.md wins on conflict.
 
-## Production vs PR #4
-- `main` TODAY (before PR #4 merge): workflow `run_leads2`, 4 runs/day (cron 30 0,6,12,18 UTC), old SMTP-counter bug => shared-server SMTP skipped every run, Hot=0. Sources: hiring, funding, shopify dork, batch1.
-- PR #4 (branch `scraping-batch2-3-3h-schedule`, NOT merged; Faiz must click Merge): cron `17 */3 * * *` (8/day), Batch2/3 sources, SMTP counter fix, SMTP_RUN_CAP=8, skip-known-leads-before-verify, hiring query rotation, repo memory system (this file set) + CI gate. After merge, the STATE-CHECK block above is true on main.
+## Production
+- `main` = PR #4 merged 2026-11-26: workflow `run_leads2` every 3 hours (cron 17 */3 * * *, 8 runs/day), Batch1+2+3 sources, SMTP counter fix, SMTP_RUN_CAP=8, skip-known-leads-before-verify, hiring query rotation, repo memory + CI gate (`ci` job `gate`).
+- PR "ops fixes" (this branch `ops-fixes-runlog-cleanup`): Domain_Cache legacy-row KeyError fix, Run_Log + Brain tab writing restored (core/report.py), unpack.yml + daily_leads.yml deleted, config.VERSION/BRAIN_NOTE. Supersedes docs-only PR #5 (close it).
 
 ## Workflows (.github/workflows)
 - run2.yml `run_leads2` ACTIVE: tests gate -> `python main.py` -> keep-alive. timeout 30 min. dispatch input target_country BOTH|US|INDIA.
-- ci.yml `ci` (new in PR #4): full pytest on PR/push + tools/check_pr_rules.py on PR.
-- daily_leads.yml DISABLED (legacy, safe to delete later). unpack.yml active but obsolete (unzips code.zip into repo) - candidate for removal.
+- ci.yml `ci` (job `gate`): full pytest on PR/push + tools/check_pr_rules.py on PR.
+- Removed 2026-11-26: unpack.yml, daily_leads.yml.
 
 ## Latest real metrics (GitHub Actions logs)
 - main scheduled runs 2026-11-24..25: ~70-77 signals, 25-36 sites audited, leads 1/5/1/0/2, hot 0, errors 0, every run logged "smtp state unreadable (JSONDecodeError)".
@@ -28,15 +28,18 @@ run_cap: 8
 ## Verification limits (never exceed; enforced by core/safety_guard.py + smtp_gate.py + CI pins)
 Shared server SMTP: 60/day UTC, 15/hr, 5 per Google/Microsoft MX per hr (ceiling 6), 8/run, jitter 30-60s, Lead_Score>=75 and priority 1 only, 72h lock on 554/Spamhaus/reputation 450. Warm-up ceiling ramp 50/100/200/300 per day, operational cap 60. A request for 200 shared-server checks/day was REFUSED (2026-11-26); volume must come from free APIs.
 
+## GitHub Secrets (evidence: env block of run logs; blank = missing)
+- SET: `GOOGLE_SA_JSON`, `SHEET_ID`.
+- MISSING (blank in the Extract step env): `SEC_CONTACT` (=> SEC requests carry "contact-not-set", very likely why funding=0), `API_KEYS`, `PRODUCTHUNT_TOKEN`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`. `YOUTUBE_API_KEY` not set (youtube skipped in logs). `SHARED_VERIFIER_URL`/`SHARED_VERIFIER_KEY` are lines inside `API_KEYS` (also missing).
+- `API_KEYS` format (one secret, multi-line NAME=value): REOON_API_KEY, VERIFALIA_USER, VERIFALIA_PASS, ZEROBOUNCE_API_KEY, ABSTRACT_API_KEY, HUNTER_API_KEY, SHARED_VERIFIER_URL, SHARED_VERIFIER_KEY.
+
 ## Open blockers / known issues
-1. PR #4 unmerged (Claude is blocked from merging) AND needs Faiz to add ONE new line at the end of CHANGELOG.md in the form `APPROVED-BY-FAIZ: 2026-11-26 PR4 protected files ok` (it changes protected files: safety test file, tools/, ci.yml). CI `ci` will fail until he does; this is by design.
-2. Hot=0: unknown whether GitHub Secrets `API_KEYS` (Reoon/Verifalia/ZeroBounce/Abstract/Hunter) and `SHARED_VERIFIER_URL`/`SHARED_VERIFIER_KEY` exist (Claude cannot read secrets). `PRODUCTHUNT_TOKEN`, `YOUTUBE_API_KEY` not set (sources skip).
-3. funding=0 and shopify dork=0 on every recent run (also on main); ats=0. Cause unknown (feeds empty at night / DDG blocking runner IP).
-4. Intermittent `company failed (KeyError)` in one company worker per run (not yet traced).
-5. Sheet `Domain_Cache` tab has a legacy header (Domain, Result, Checked_On) from v.8; code now writes Domain, Catch_All, Pattern, Updated_On. Needs header reset by owner or code fix.
-6. `State` tab still holds legacy v.8 rows (Updated_IST...); code uses its own `smtp_state` row. Run_Log / Brain / Context_Notes tabs are no longer written.
-7. Not wired: USPTO trademarks (needs key + verified endpoint), Meta Ad Library API (political ads only outside EU), dashboard.
-8. Branch protection requiring the `ci` check is a GitHub setting only Faiz can enable (see Next step).
+1. Branch protection on `main` (require check `gate`) NOT set: API proxy blocks Claude. Faiz: GitHub Settings > Branches.
+2. Hot=0 until `API_KEYS` (+ shared verifier lines) are added; shared SMTP only runs when SHARED_VERIFIER_URL is set.
+3. funding=0 (SEC_CONTACT missing), shopify dork=0 (DDG likely blocking runner), ats=0 on recent runs.
+4. Not wired: USPTO trademarks (needs key + verified endpoint), Meta Ad Library API (political ads only outside EU), dashboard.
+5. Legacy v.8 rows remain in `State` and `Domain_Cache` tabs on purpose (code ignores/tolerates them; never deleted automatically).
+6. Fixed in the ops PR (verify after merge on the first scheduled run: Run_Log row appears, no `company failed (KeyError)`): KeyError root cause = DomainCache.put on legacy Domain_Cache rows without Catch_All/Pattern.
 
 ## Exact next step
-Faiz: (1) add the approval line (see blocker 1) at the bottom of CHANGELOG.md on the PR branch (GitHub web editor) and merge PR #4; (2) GitHub Settings > Branches > Add rule for `main` > "Require status checks to pass" > select `gate` (job of workflow `ci`) so rules cannot be bypassed; (3) check Settings > Secrets and variables > Actions for `API_KEYS`, `SHARED_VERIFIER_URL`. Then Claude: trace KeyError, fix Domain_Cache header, investigate funding/shopify zeros.
+Faiz: (1) merge the ops PR, close PR #5; (2) add GitHub secrets above (Settings > Secrets and variables > Actions > New repository secret); (3) Settings > Branches > rule for `main` requiring `gate`. Then Claude: read first scheduled Run_Log rows, confirm hot leads once `API_KEYS` exist.

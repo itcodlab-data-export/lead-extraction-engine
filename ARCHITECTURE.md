@@ -3,6 +3,8 @@
 ## Purpose and flow
 Extraction-only lead engine. One run = `python main.py` (GitHub Actions workflow run2.yml): collect company signals -> audit each company's site -> find people -> build emails -> verify -> score/QC -> dedup -> append to Google Sheet -> one summary line (log + optional Telegram).
 
+config.VERSION/BRAIN_NOTE must be bumped on every code/rule change (test: VERSION date appears in CHANGELOG.md).
+
 main.py order: `safety_guard.preflight(config)` (violation => print BLOCK_MSG, return 2, no work) -> sources hiring, funding (each try/except) -> shopify.fetch(signals) -> batch1.fetch(sources=batch1.SOURCES + batch2.SOURCES) in parallel (cap BATCH1_BUDGET_SEC=300, max BATCH1_MAX_SIGNALS=60, reserved slots after the first MAX_COMPANIES_PER_RUN*2 signals) -> `Sheet()` -> Dedup from Master_Dedup_Index + Do_Not_Contact -> `_gate(sh)` builds the SmtpGate from State (None on any read/parse error = fail-closed) and DomainCache from the Domain_Cache tab -> `pipeline.build_leads` -> gate.flush -> write_domain_cache -> `sh.sync(leads)` -> rotation alert if Raw_Leads > ROTATION_ALERT_ROWS -> `alert.send` summary. Return 0.
 
 Signal dict (every source): `company, country (US|INDIA), source_platform, signal, source_url, evidence, domain_hint, people[]`.
@@ -28,22 +30,24 @@ TARGET_COUNTRY (env, BOTH|US|INDIA), SHEET_ID, SEC_USER_AGENT (needs SEC_CONTACT
 - core/stakeholders.py: team/about page scraping (PATHS), 5 tracks (Executive, Marketing, Sales, Tech_IT, HR_Ops), junior filter, name regex, cap 8 per company / 2 per dept, priority order, size_tier.
 - core/contacts.py: deep email scrape of /contact, /contact-us, /about, /team, /policies/contact-information, /privacy-policy; text, mailto:, JSON-LD, Cloudflare data-cfemail; only on-domain emails.
 - core/verifier.py: layer1 syntax/disposable/role filter, DNS MX/SPF/DMARC (cached), Gravatar probe, permutations (first.last, first, flast, firstlast, first_l), `verify` -> (status, route), `detect_pattern`.
-- core/apiverify.py: provider waterfall Reoon > Verifalia > ZeroBounce > Abstract > Hunter (env keys; missing key = skipped); DomainCache (Catch_All, Pattern per domain, backed by Domain_Cache tab); `check` (catch-all domains never trusted valid); `smtp_last_resort` (only SHARED_VERIFIER_URL set, gate present, Lead_Score>=75, priority 1, gate.acquire ok; HTTP 429 sets gate.blocked; replies feed gate.report).
+- core/apiverify.py: provider waterfall Reoon > Verifalia > ZeroBounce > Abstract > Hunter (env keys; missing key = skipped); DomainCache (Catch_All, Pattern per domain, backed by Domain_Cache tab; tolerates missing keys and legacy v.8 rows via `row_from_values`); `check` (catch-all domains never trusted valid); `smtp_last_resort` (only SHARED_VERIFIER_URL set, gate present, Lead_Score>=75, priority 1, gate.acquire ok; HTTP 429 sets gate.blocked; replies feed gate.report).
 - core/safety_guard.py: IMMUTABLE ceilings (MappingProxyType) HOURLY 15, MX_HOURLY 6, JITTER_MIN_SEC 30, DAILY_ABSOLUTE 300, OPERATIONAL_DAILY 60, MIN_SCORE 75, LOCK_HOURS 72; WARMUP {1:50,2:100,3:200,4:300}; BLOCK_MSG; FAIL_CLOSED; `violations/preflight/effective_daily_cap/warmup_cap/may_run_smtp`; UTC helpers.
 - core/smtp_gate.py: SmtpGate: merges Sheet State + local flock/atomic JSON file (larger count wins), per-hour/per-day/per-MX-provider counters (UTC rollover), per-run cap SMTP_RUN_CAP, jitter sleep inside `acquire`, circuit breaker `classify/report` (554/Spamhaus, 450 with blocked|spam|blacklist|reputation|abuse => lock 72h), flush to State every 5, `mx_provider()` (google/microsoft/other).
-- core/sheets_sync.py: gspread via service account; `Sheet.sync` writes Master_Dedup_Index FIRST then Raw_Leads, Hot_Leads_Ready (YES and not Permutated_Unverified), Needs_SMTP_Check (YES and Permutated_Unverified); State tab: own `smtp_state` key row (read raises on bad JSON => fail-closed); Domain_Cache read/write; retry/backoff.
+- core/sheets_sync.py: gspread via service account; `Sheet.sync` writes Master_Dedup_Index FIRST then Raw_Leads, Hot_Leads_Ready (YES and not Permutated_Unverified), Needs_SMTP_Check (YES and Permutated_Unverified); State tab: own `smtp_state` key row (read raises on bad JSON => fail-closed); Domain_Cache positional read (legacy header tolerated) / write; `append_aux`/`last_aux_row` helpers for Run_Log and Brain; retry/backoff.
 - core/dedup.py: 3-key fingerprint (name+domain sha1[:16]), email (gmail dots/plus normalised), LinkedIn slug; generic inbox, competitor-agency name and Do_Not_Contact rejects.
 - core/qc.py: score (status, evidence, audit fact, track, phone, LinkedIn, industry, priority) and 7-point QC (MIN_LEAD_SCORE 65).
+- core/report.py: `write_run_log(sh, metrics)` appends one row to Run_Log (23 columns RUN_COLS, aligned to the legacy v.8 header) after every run; `brain_note(sh)` appends one Brain line when config.VERSION is new; both swallow all errors (reporting never breaks a run). `health()` = GOOD / OK - leads but none hot / OK - no new leads / ERRORS.
 - core/models.py: 24 columns, TABS, dedup/DNC column lists. core/net.py: requests session helpers (get/text/jitter). core/logger.py: PII-masking logger. core/alert.py: log + optional Telegram. core/__init__.py, sources/__init__.py: package markers.
 
 ## Google Sheet (id in STATE.md)
-Written: Raw_Leads, Hot_Leads_Ready, Needs_SMTP_Check, Master_Dedup_Index, Do_Not_Contact (headers auto-created), State (smtp_state row), Domain_Cache. Hot = Email_Status not Permutated_Unverified and QC YES (scraped/pattern MX, Gravatar, API-verified or shared-server verified).
+Written: Raw_Leads, Hot_Leads_Ready, Needs_SMTP_Check, Master_Dedup_Index, Do_Not_Contact (headers auto-created), State (smtp_state row; legacy rows untouched), Domain_Cache, Run_Log (one row per run), Brain (one line per new config.VERSION). Hot = Email_Status not Permutated_Unverified and QC YES (scraped/pattern MX, Gravatar, API-verified or shared-server verified).
 
 ## Auth and secrets (names only)
 GOOGLE_SA_JSON (Service Account JSON, Sheets scope), SHEET_ID, SEC_CONTACT, TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, PRODUCTHUNT_TOKEN, YOUTUBE_API_KEY, API_KEYS (multi-line NAME=value: REOON_API_KEY, VERIFALIA_USER, VERIFALIA_PASS, ZEROBOUNCE_API_KEY, ABSTRACT_API_KEY, HUNTER_API_KEY, SHARED_VERIFIER_URL, SHARED_VERIFIER_KEY). All in GitHub Secrets; none in repo.
 
 ## Workflows
-.github/workflows/run2.yml (production, see STATE.md), .github/workflows/ci.yml (tests + PR rules), .github/workflows/daily_leads.yml (disabled legacy), .github/workflows/unpack.yml (obsolete code.zip unpacker).
+.github/workflows/run2.yml (production, see STATE.md), .github/workflows/ci.yml (tests + PR rules).
+(unpack.yml and daily_leads.yml were removed 2026-11-26.)
 
 ## Tests and enforcement
 - tests/test_offline.py: unit tests of dedup/verifier/qc/stakeholders/contacts/apiverify/sources/batch runner/dork helpers (no network).
