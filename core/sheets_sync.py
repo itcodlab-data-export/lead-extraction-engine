@@ -2,7 +2,7 @@
 import os, json, time
 import gspread
 import config
-from core import models, logger
+from core import models, logger, apiverify
 from core.safety_guard import utc_today
 log = logger.get()
 
@@ -92,9 +92,19 @@ class Sheet:
         else: _retry(ws.append_rows, [["smtp_state", json.dumps(st)]], value_input_option="RAW")
 
     def read_domain_cache(self):
-        try: return {r["Domain"]: r for r in _retry(self._aux("Domain_Cache", DC_COLS).get_all_records) if r.get("Domain")}
+        """Positional read (legacy v.8 header Domain/Result/Checked_On is tolerated): {domain: row dict}."""
+        try:
+            rows = _retry(self._aux("Domain_Cache", DC_COLS).get_all_values)[1:]
+            return {r[0]: apiverify.row_from_values(r) for r in rows if r and r[0]}
         except Exception as e:
             log.warning("domain cache unavailable (%s)", type(e).__name__); return {}
+
+    def append_aux(self, tab, head, rows):
+        _retry(self._aux(tab, head).append_rows, [[_trim(c) for c in r] for r in rows], value_input_option="RAW")
+
+    def last_aux_row(self, tab, head):
+        vals = _retry(self._aux(tab, head).get_all_values)
+        return vals[-1] if len(vals) > 1 else None
 
     def write_domain_cache(self, rows):
         if rows: _retry(self._aux("Domain_Cache", DC_COLS).append_rows, rows, value_input_option="RAW")

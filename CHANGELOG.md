@@ -27,3 +27,8 @@ Entry format: `## YYYY-MM-DD <title>` then bullet lines. Changes to protected fi
 - AWAITING FAIZ: approval line for protected-file changes (see STATE.md blocker 1).
 
 APPROVED-BY-FAIZ: 2026-11-26 PR4 protected files ok
+
+## 2026-11-26 Ops fixes: Run_Log/Brain restored, KeyError fix, legacy workflows removed (config.VERSION 2026-11-26.1)
+- core/report.py: one Run_Log row per run (23 cols) + one Brain line per new config.VERSION; never raises. main.py collects per-source counts and calls it.
+- core/apiverify.py + core/sheets_sync.py: DomainCache tolerates legacy v.8 rows (root cause of KeyError 'Catch_All'); Domain_Cache read is positional. State handling from PR #4 verified: legacy Updated_IST row ignored, corrupt smtp_state still fails closed.
+- Deleted .github/workflows/unpack.yml and daily_leads.yml. Safety ceilings, tests/test_safety_locks.py and protected files untouched.

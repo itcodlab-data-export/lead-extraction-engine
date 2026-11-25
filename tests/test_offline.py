@@ -127,3 +127,42 @@ def test_hiring_rotation_changes_with_slot(monkeypatch):
         seen.add(tuple(dork.pick(config.JOB_QUERIES, config.JOB_QUERIES_PER_RUN)))
     assert len(seen) >= 4
 import datetime
+
+# ---- Ops fixes: Domain_Cache legacy rows, Run_Log / Brain reporting, VERSION discipline ----
+from core import report, apiverify as av
+
+def test_domain_cache_legacy_rows_never_raise_keyerror():
+    legacy = {"Domain": "acme.com", "Result": "catch_all", "Checked_On": "2026-11-20"}   # v.8 shape: no Catch_All/Pattern keys
+    c = av.DomainCache({"acme.com": legacy})
+    c.put("acme.com", pattern="first.last")                                              # used to raise KeyError 'Catch_All'
+    assert c.new[0][:3] == ["acme.com", "", "first.last"]
+    c.put("new.io", catch_all=True); assert c.new[1][:2] == ["new.io", "yes"]
+
+def test_row_from_values_handles_legacy_and_current_rows():
+    assert av.row_from_values(["a.com", "catch_all", "2026-11-20"]) == {"Domain": "a.com", "Catch_All": "yes", "Pattern": "", "Updated_On": "2026-11-20"}
+    assert av.row_from_values(["b.com", "no", "first.last", "2026-11-26"])["Pattern"] == "first.last"
+    assert av.row_from_values(["c.com"])["Catch_All"] == ""
+
+def test_run_row_aligned_to_columns_and_health():
+    row = report.run_row({"trigger": "schedule", "hiring": 70, "leads": 3, "hot": 0, "shared_smtp": "skipped", "errors": 0,
+                          "signal_cats": ["Hiring", "Hiring", "Launch"], "started": time.time()})
+    assert len(row) == len(report.RUN_COLS) == 23
+    d = dict(zip(report.RUN_COLS, row))
+    assert d["Version"] == config.VERSION and d["Hiring_Signals"] == 70 and d["Lead_Sources"] == "Hiring=2 Launch=1" and d["Health"] == "OK - leads but none hot"
+    assert report.health(1, 5, 5).startswith("ERRORS") and report.health(0, 0, 0) == "OK - no new leads" and report.health(0, 2, 1) == "GOOD"
+
+def test_report_never_raises_and_brain_note_once_per_version():
+    class Boom:
+        def append_aux(self, *a): raise RuntimeError("sheet down")
+        def last_aux_row(self, *a): raise RuntimeError("sheet down")
+    report.write_run_log(Boom(), {}); report.brain_note(Boom())                          # swallowed
+    calls = []
+    class Sh:
+        def __init__(s, last): s.last = last
+        def last_aux_row(s, *a): return s.last
+        def append_aux(s, tab, head, rows): calls.append((tab, rows))
+    report.brain_note(Sh(["t", config.VERSION, "Code update", "n"])); assert not calls
+    report.brain_note(Sh(["t", "old", "Code update", "n"])); assert calls[0][0] == "Brain" and calls[0][1][0][1] == config.VERSION
+
+def test_config_version_is_in_changelog():
+    assert config.VERSION and config.VERSION[:10] in open("CHANGELOG.md").read() and config.BRAIN_NOTE

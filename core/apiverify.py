@@ -1,7 +1,7 @@
 """Free-tier verification waterfall (Reoon > Verifalia > ZeroBounce > AbstractAPI > Hunter).
 Providers without a key are skipped. Result: valid | invalid | catch_all | unknown.
 The shared-server SMTP is only a last resort for top P1 leads (see smtp_last_resort)."""
-import os, threading
+import os, re, threading
 import config
 from core import net, logger
 log = logger.get()
@@ -53,6 +53,15 @@ PROVIDERS = [("reoon", reoon, lambda: os.getenv("REOON_API_KEY")), ("verifalia",
              ("zerobounce", zerobounce, lambda: os.getenv("ZEROBOUNCE_API_KEY")),
              ("abstract", abstract, lambda: os.getenv("ABSTRACT_API_KEY")), ("hunter", hunter, lambda: os.getenv("HUNTER_API_KEY"))]
 
+_DATE = re.compile(r"^\d{4}-\d\d-\d\d$")
+
+def row_from_values(v):
+    """Sheet row [Domain, B, C, D] -> cache dict. Handles legacy v.8 rows (Domain, 'catch_all', date) and current rows (Domain, yes|no, pattern, date)."""
+    v = list(v) + [""] * (4 - len(v))
+    flag = {"catch_all": "yes", "yes": "yes", "no": "no"}.get(str(v[1]).strip().lower(), "")
+    pat, on = (("", v[2]) if _DATE.match(str(v[2]).strip()) else (v[2], v[3]))
+    return {"Domain": v[0], "Catch_All": flag, "Pattern": pat, "Updated_On": on}
+
 class DomainCache:
     """Catch-all flag + verified pattern per domain, backed by the Domain_Cache tab."""
     def __init__(self, rows=None):
@@ -61,10 +70,11 @@ class DomainCache:
     def put(self, dom, catch_all=None, pattern=None):
         from core.safety_guard import utc_today
         with self.lk:
-            cur = dict(self.d.get(dom, {"Domain": dom, "Catch_All": "", "Pattern": ""}))
+            cur = {"Domain": dom, "Catch_All": "", "Pattern": "", "Updated_On": "", **self.d.get(dom, {})}   # missing keys never raise
+            old = dict(cur)
             if catch_all is not None: cur["Catch_All"] = "yes" if catch_all else "no"
             if pattern: cur["Pattern"] = pattern
-            if cur != self.d.get(dom):
+            if cur != old or dom not in self.d:
                 cur["Updated_On"] = utc_today(); self.d[dom] = cur
                 self.new.append([cur["Domain"], cur["Catch_All"], cur["Pattern"], cur["Updated_On"]])
 
